@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import Phonebook from './components/Phonebook'
+import PhoneForm from './components/PhoneForm'
+import personService from './services/persons'
 
 const App = () => {
   const [persons, setPersons] = useState([]) 
   const [newName, setNewName] = useState('')
   const [newNum, setNewNum] = useState('')
   const [filterName, setFilterName] = useState('')
+  const personObj = {
+    name: newName,
+    number: newNum,
+    id: persons.length + 1
+  }
   
   useEffect(() => {
-    const promise = axios.get('http://localhost:3001/persons')
-    console.log('axios promise', promise)
-    promise.then(response => {
-      console.log('resp', response.data)
+    // const promise = axios.get('http://localhost:3001/persons')
+    // //console.log('axios promise', promise)
+    // promise.then(response => {
+    //   //console.log('resp', response.data)
+    //   setPersons(response.data)
+    // })
+    personService.getAll().then((response) => {
       setPersons(response.data)
     })
-    
   }, [])
   
   const handleFiltering = (e) => {
@@ -24,22 +33,50 @@ const App = () => {
   
   const addPerson = (e) => {
     e.preventDefault();
-    const personObj = {
-      name: newName,
-      number: newNum,
-      id: persons.length + 1
-    }
     const found = persons.some( person => person.name == personObj.name )
-    if  ( !found ) {
-     setPersons(persons.concat(personObj));
-     setNewName('')
-     setNewNum('')
-    } else { alert (`The name ${ newName } already exists in phonebook`)}
+      if  ( !found ) {
+        // const promise = axios.post(`http://localhost:3001/persons`, personObj)
+        personService.add(personObj).then(response => {
+          console.log('add person response', response.data)
+          setPersons(persons.concat(response.data));
+          setNewName('')
+          setNewNum('')
+      })
+    }else {
+      //alert (`The name ${ newName } already exists in phonebook`)
+      if (window.confirm(`${personObj.name} is already added to phonebook,replace the old number with a new one ?`)) {
+        const thePerson = persons.find(p => p.name === personObj.name)
+        console.log('the person', thePerson)
+        //person obj will now contain original name and id and a diff number
+        const updatedPerson = {...personObj, number: newNum, id: thePerson.id }
+        console.log('spread ope', updatedPerson)
+        personService.update(thePerson.id, updatedPerson).then((response) => {
+          console.log('update resp',response.data)
+          const old = persons.filter(p => p.id !== updatedPerson.id)
+          const updatedPersons = old.concat([response.data])
+          console.log('updatedPersons',updatedPersons)
+          setPersons(updatedPersons)
+        })
+      }
+    }
   }
   
   const filteredPersons = filterName ?
   persons.filter(person => person.name.toLowerCase().includes(filterName.toLowerCase())) :
   persons
+  
+  const handleDel = (id) => {
+    const person = persons.find(p => p.id === id)
+    // console.log(person)
+    const updatedPersons = persons.filter(p => p.id !== id)
+    
+    if (window.confirm(`Are you sure you want to delete ${person.name} ??`)) {
+      personService.del(id, person).then((response) => {
+      console.log('delete resp', response.data)
+      setPersons(updatedPersons)
+    })
+    }
+  }
   
 
   return (
@@ -62,6 +99,7 @@ const App = () => {
       <h2>Numbers</h2>
       <Phonebook
         persons={filteredPersons}
+        onDelete={handleDel}
       />
     </div>
   )
@@ -69,43 +107,3 @@ const App = () => {
 
 export default App
 
-const PhoneForm = (props) => {
-  const {onsubmit, nameval, namechange, numval, numchange } = props
-
-  return (
-    <form onSubmit={onsubmit}>
-    <div>
-      name: <input 
-      value={nameval}
-      onChange={namechange}
-      />
-    </div>
-    <div>
-      number: <input 
-      value={numval}
-      onChange={numchange}
-      />
-    </div>
-    <div>
-      <button type="submit">add</button>
-    </div>
-  </form>
-  )
-}
-
-const Phonebook = ({persons}) => {
-    return (
-    <ul>
-    {persons.map( person => 
-      <Persons key={person.id} name= {person.name} number={person.number}/>
-      )}
-    </ul>
-    )
-}
-
-const Persons = (props) => {
-  const { name, number, isFiltered } = props
-  return (
-    <li>{name} --- {number} </li>
-  )
-}
