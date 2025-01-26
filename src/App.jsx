@@ -1,113 +1,105 @@
-// import Note from './components/Note'
-
-// const App = ({ notes }) => {
-//   return (
-//     <div>
-//       <h1>Notes</h1>
-//       <ul>
-//         {notes.map(note => 
-//           <Note key={note.id} note={note} />
-//         )}
-//       </ul>
-//     </div>
-//   )
-// }
-
-// export default App
-
+import { useState } from 'react'
 
 const App = () => {
-  const courses = [
-    {
-      name: 'Half Stack application development',
-      id: 1,
-      parts: [
-        {
-          name: 'Fundamentals of React',
-          exercises: 10,
-          id: 1
-        },
-        {
-          name: 'Using props to pass data',
-          exercises: 7,
-          id: 2
-        },
-        {
-          name: 'State of a component',
-          exercises: 14,
-          id: 3
-        },
-        {
-          name: 'Redux',
-          exercises: 11,
-          id: 4
-        }
-      ]
-    }, 
-    {
-      name: 'Node.js',
-      id: 2,
-      parts: [
-        {
-          name: 'Routing',
-          exercises: 3,
-          id: 1
-        },
-        {
-          name: 'Middlewares',
-          exercises: 7,
-          id: 2
-        }
-      ]
+  const [persons, setPersons] = useState([
+    { name: 'Arto Hellas', number: '040-123456', id: 1 },
+    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
+    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
+    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
+  ]) 
+  const [newName, setNewName] = useState('')
+  const [newNum, setNewNum] = useState('')
+  const [filterName, setFilterName] = useState('')
+  
+  const handleFiltering = (e) => {
+    const filterVal = e.target.value
+    setFilterName(filterVal)
+  }
+  
+  const addPerson = (e) => {
+    e.preventDefault();
+    const personObj = {
+      name: newName,
+      number: newNum,
+      id: persons.length + 1
     }
-  ]
+    const found = persons.some( person => person.name == personObj.name )
+    if  ( !found ) {
+     setPersons(persons.concat(personObj));
+     setNewName('')
+     setNewNum('')
+    } else { alert (`The name ${ newName } already exists in phonebook`)}
+  }
+  
+  const filteredPersons = filterName ?
+  persons.filter(person => person.name.toLowerCase().includes(filterName.toLowerCase())) :
+  persons
+  
 
   return (
     <div>
-      <ul>
-        {courses.map( (course) => {
-          return <Course key={course.id} course={course} />
-        })}
-      </ul>
+      <h2>Phonebook</h2>
+      <div>
+      filter shown with: <input
+      value={filterName}
+      onChange={handleFiltering}
+      />
+      </div>
+      <PhoneForm 
+        onsubmit={addPerson}
+        nameval={newName}
+        namechange={e => setNewName(e.target.value)}
+        numval={newNum}
+        numchange={e => setNewNum(e.target.value)}
+        
+      />
+      <h2>Numbers</h2>
+      <Phonebook
+        persons={filteredPersons}
+      />
     </div>
   )
 }
 
 export default App
 
-const Course = (props) => {
-  const {course} = props
+const PhoneForm = (props) => {
+  const {onsubmit, nameval, namechange, numval, numchange } = props
 
-  const total = course.parts.reduce( (s, p) => {
-    return s + p.exercises
-  }, 0)
-  
   return (
+    <form onSubmit={onsubmit}>
     <div>
-      <Header name={course.name}/>
-      <ul>
-        { course.parts.map( part => {
-           return <Part key={part.id} name={part.name} exercises={part.exercises}/>
-        })}
-      </ul>
-      <span> Total of </span>{total}<span> exercises</span>
-
+      name: <input 
+      value={nameval}
+      onChange={namechange}
+      />
     </div>
+    <div>
+      number: <input 
+      value={numval}
+      onChange={numchange}
+      />
+    </div>
+    <div>
+      <button type="submit">add</button>
+    </div>
+  </form>
   )
 }
 
-const Header = (props) => {
-  const {name} = props
-  console.log('props in header', props)
-  return (
-    <h1>{name}</h1>
-  )
+const Phonebook = ({persons}) => {
+    return (
+    <ul>
+    {persons.map( person => 
+      <Persons key={person.id} name= {person.name} number={person.number}/>
+      )}
+    </ul>
+    )
 }
 
-const Part = (props) => {
-  const { name, exercises} = props
-  console.log('props in Part',props)
+const Persons = (props) => {
+  const { name, number, isFiltered } = props
   return (
-    <li>{name} {exercises}</li>
+    <li>{name} --- {number} </li>
   )
 }
