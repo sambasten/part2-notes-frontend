@@ -52,8 +52,7 @@ const App = () => {
         console.log('spread ope', updatedPerson)
         personService.update(thePerson.id, updatedPerson).then((response) => {
           console.log('update resp',response.data)
-          const old = persons.filter(p => p.id !== updatedPerson.id)
-          const updatedPersons = old.concat([response.data])
+          const updatedPersons = persons.map((person) => person.id != thePerson.id ? person : response.data )
           console.log('updatedPersons',updatedPersons)
           setPersons(updatedPersons)
         })
